@@ -19,6 +19,8 @@ This project builds an automated triage layer that classifies incoming guest mes
 
 ## Architecture
 
+![Full workflow overview](workflow-overview.png)
+
 ```
 Guest message (webhook)
         │
@@ -54,12 +56,16 @@ reference info)
 
 ## What It Demonstrates
 
+![Routing decision for a classified inquiry](routing-execution.png)
+
 - **Grounded AI responses, not hallucination.** Tested with a question that required combining two separate facts from the reference material (a guest arriving after normal check-in hours) — the system correctly connected both facts into one coherent, accurate answer, rather than just pattern-matching a single line.
 - **Honest uncertainty.** Tested with a question genuinely outside the reference material (parking/bike storage). The system correctly declined to guess and routed the guest to a human, instead of inventing a plausible-sounding but false policy — arguably the single most important property for anything guest-facing.
 - **Resilience to failure.** The classification step was deliberately broken (invalid model reference) to confirm the fallback path. The guest's message was still captured and routed to human review rather than lost — proven with a live test, not just designed in theory.
 - **Correct handling of ambiguous input.** A message that didn't cleanly fit any predefined category (a promotional partnership request) was still routed sensibly to human review rather than forced into the wrong bucket.
 
 ---
+
+![Complaint log populated by the workflow](complaint-log.png)
 
 ## Real Issues Encountered and Fixed
 
