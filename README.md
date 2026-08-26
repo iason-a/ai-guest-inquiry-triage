@@ -19,20 +19,18 @@ This project builds an automated triage layer that classifies incoming guest mes
 
 ## Architecture
 
-![Full workflow overview](workflow-overview.png)
-
 ```
-Guest message (webhook)
+GuestInquiryReceived (webhook)
         │
         ▼
-AI Classification (Claude)
+ClassifyInquiry (Claude) ──► SetCategory
 category = booking_logistics | general_question | complaint | special_request
+        │ (on failure) ──► SetFallbackCategory
+        ▼
+MergeMessageAndClassification
         │
         ▼
-   Merge (rejoin original message data + classification)
-        │
-        ▼
-      Switch (route by category)
+RouteByCategory
         │
    ┌────┼────────────┬──────────────┐
    ▼    ▼             ▼              ▼
@@ -40,7 +38,7 @@ booking_ general_    complaint      special_request
 logistics question                  (+ unclassified errors)
    │    │             │              │
    ▼    ▼             ▼              ▼
-AI-drafted reply    Logged to Google Sheets for human review
+DraftGuestReply     LogToComplaintRegister
 (grounded in the
 business's own
 reference info)
@@ -73,9 +71,9 @@ Building this surfaced several non-obvious problems — each one a genuine debug
 
 1. **A trailing period in the webhook path** caused a "webhook not registered" error even though the workflow was correctly armed. The path field contained `hostel-inquiry.` instead of `hostel-inquiry` — a one-character difference that broke the exact-match lookup.
 2. **Google Sheets OAuth scope.** The initial credential authorization granted a narrower access scope than the integration needed, causing the connected spreadsheet to be invisible to the node (a 404 on a resource that clearly existed). Fixed by fully disconnecting and re-authorizing with explicit full Drive access.
-3. **Data loss across the workflow chain.** Each node in n8n only receives what its *immediate* predecessor outputs — data doesn't automatically travel through the whole chain. The classification step's output only contained the AI's response, silently dropping the original guest name, room number, and message. Fixed with a Merge node that explicitly rejoins the original webhook data with the classification result.
-4. **Merge node input mismatch.** A first attempt at the Merge node had both the success path and the error-fallback path feeding into the same input slot, instead of one path per input — producing an inconsistent, hard-to-diagnose state that only became obvious when checking the two inputs independently rather than trusting the combined output view.
-5. **Missing Switch fallback.** When the classification step failed and produced a category value that didn't match any predefined branch, the Switch node had nowhere to send it — and produced no output at all. Fixed by adding an explicit default/fallback branch, so anything unexpected is routed to human review rather than vanishing.
+3. **Data loss across the workflow chain.** Each node in n8n only receives what its *immediate* predecessor outputs — data doesn't automatically travel through the whole chain. `ClassifyInquiry`'s output only contained the AI's response, silently dropping the original guest name, room number, and message. Fixed by adding `MergeMessageAndClassification`, which explicitly rejoins the original webhook data with the classification result.
+4. **Merge node input mismatch.** A first attempt at `MergeMessageAndClassification` had both the success path (`SetCategory`) and the error-fallback path (`SetFallbackCategory`) feeding into the same input slot, instead of one path per input — producing an inconsistent, hard-to-diagnose state that only became obvious when checking the two inputs independently rather than trusting the combined output view.
+5. **Missing fallback branch.** When `ClassifyInquiry` failed and produced a category value that didn't match any predefined branch, `RouteByCategory` had nowhere to send it — and produced no output at all. Fixed by adding an explicit default/fallback branch, so anything unexpected is routed to `LogToComplaintRegister` for human review rather than vanishing.
 
 ---
 
