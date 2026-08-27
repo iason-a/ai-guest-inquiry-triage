@@ -116,3 +116,7 @@ Building this surfaced several non-obvious problems — each one a genuine debug
 ## Stack
 
 n8n (workflow orchestration) · Anthropic Claude API (classification + reply generation) · Google Sheets (human-review logging)
+
+---
+
+A related project, an AI-powered lead scoring and routing system that classifies and scores inbound leads by urgency, logs every lead to CRM, and routes by priority, is available here: https://github.com/iason-a/ai-lead-scoring-system/tree/main
