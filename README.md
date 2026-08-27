@@ -78,6 +78,8 @@ reference set)
 
 - **Grounded AI responses, not hallucination.** Tested with a question that required combining two separate retrieved facts (a guest arriving after normal check-in hours needed both the check-in cutoff and the late-arrival airport transport info) — the system correctly retrieved both relevant topics and synthesized one coherent, accurate reply from just those two, not the entire knowledge base.
 - **Precise retrieval, not just correct answers.** Tested with a single-topic question (directions from the port) — the system retrieved only the one relevant topic and left out unrelated information (check-in times, amenities, policies) entirely, confirming the matching step is actually narrowing context, not just passing everything through.
+
+![Keyword matching narrows the knowledge base to only the relevant topics](topic-matching.png)
 - **Honest uncertainty, enforced structurally.** Tested with a question genuinely outside the knowledge base (parking/bike storage). Zero topics matched, so the AI reply-drafting step was never even called — the message was routed directly to human review. This is a stronger guarantee than a prompt instruction to "say you don't know," since the model is never given the chance to answer at all.
 - **Resilience to failure.** The classification step was deliberately broken (invalid model reference) to confirm the fallback path. The guest's message was still captured and routed to human review rather than lost — proven with a live test, not just designed in theory.
 - **Correct handling of ambiguous input.** A message that didn't cleanly fit any predefined category (a promotional partnership request) was still routed sensibly to human review rather than forced into the wrong bucket.
